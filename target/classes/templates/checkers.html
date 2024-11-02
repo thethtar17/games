@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkers Game</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: red;
+            flex-direction: column;
+        }
+
+        table {
+            border-collapse: collapse;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        td {
+            width: 60px;
+            height: 60px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 20px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        td:hover {
+            transform: scale(1.1);
+        }
+
+        .black {
+            background-color: #333;
+            color: white;
+        }
+
+        .white {
+            background-color: #eee;
+        }
+
+        .piece {
+            border-radius: 50%;
+            width: 90%;
+            height: 90%;
+            display: inline-block;
+            transition: transform 0.3s;
+        }
+
+        .piece:hover {
+            transform: scale(1.1);
+        }
+
+        .WHITE {
+            background-color: white;
+            border: 2px solid black;
+        }
+
+        .BLACK {
+            background-color: black;
+            border: 2px solid white;
+        }
+
+        .WHITE_KING, .BLACK_KING {
+            background-color: gold;
+            border: 2px solid #333;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-15px);
+            }
+            60% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .current-player {
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        button:hover {
+            background-color: #ddd;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <div class="current-player">Current Player: <span id="currentPlayer"></span></div>
+        <table id="checkersBoard"></table>
+        <button onclick="resetBoard()" class="btn btn-primary">Reset Board</button>
+    </div>
+
+    <script>
+        let selectedCell = null;
+
+        document.addEventListener("DOMContentLoaded", function() {
+            loadBoard();
+            getCurrentPlayer();
+        });
+
+        function loadBoard() {
+            fetch('/api/checkers/board')
+                .then(response => response.json())
+                .then(data => {
+                    const board = document.getElementById('checkersBoard');
+                    board.innerHTML = '';
+                    for (let i = 0; i < data.length; i++) {
+                        const row = document.createElement('tr');
+                        for (let j = 0; j < data[i].length; j++) {
+                            const cell = document.createElement('td');
+                            cell.classList.add((i + j) % 2 === 0 ? 'white' : 'black');
+                            if (data[i][j]) {
+                                const piece = document.createElement('div');
+                                piece.classList.add('piece', data[i][j]);
+                                cell.appendChild(piece);
+                            }
+                            cell.addEventListener('click', () => selectCell(i, j));
+                            row.appendChild(cell);
+                        }
+                        board.appendChild(row);
+                    }
+                });
+        }
+
+        function getCurrentPlayer() {
+            fetch('/api/checkers/currentPlayer')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('currentPlayer').innerText = data;
+                });
+        }
+
+        function selectCell(x, y) {
+            if (selectedCell) {
+                movePiece(selectedCell.x, selectedCell.y, x, y);
+                selectedCell = null;
+            } else {
+                selectedCell = {x, y};
+            }
+        }
+
+        function movePiece(fromX, fromY, toX, toY) {
+            fetch(`/api/checkers/move?fromX=${fromX}&fromY=${fromY}&toX=${toX}&toY=${toY}`, {
+                method: 'POST'
+            }).then(response => {
+                if (response.ok) {
+                    loadBoard();
+                    getCurrentPlayer();
+                } else {
+                    alert('Invalid move');
+                }
+            });
+        }
+
+        function resetBoard() {
+            fetch('/api/checkers/reset', {
+                method: 'POST'
+            }).then(() => {
+                loadBoard();
+                getCurrentPlayer();
+            });
+        }
+    </script>
+</body>
+</html>

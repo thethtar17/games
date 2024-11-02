@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        table {
+            border-collapse: collapse;
+            margin: auto;
+        }
+         td {
+            width: 80px;
+            height: 80px;
+            border: 1px solid black;
+            text-align: center;
+            font-size: 36px;
+            cursor: pointer;
+            transition: transform 0.3s ease-in-out;
+        }
+        td:hover {
+            transform: scale(1.1);
+            background-color: grey;
+        }
+     
+        .results-table th, .results-table td {
+            width: auto;
+            height: auto;
+            font-size: 16px;
+            cursor: default;
+        }
+        button {
+            display: block;
+            margin: 10px auto;
+            padding: 10px 20px;
+        }
+         .fade-in {
+            animation: fadeIn 1s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="container-fluid">
+    <h1 class="text-center">Tic Tac Toe</h1>
+    <table id="board">
+        <tr>
+            <td onclick="makeMove(0, 0)"></td>
+            <td onclick="makeMove(0, 1)"></td>
+            <td onclick="makeMove(0, 2)"></td>
+        </tr>
+        <tr>
+            <td onclick="makeMove(1, 0)"></td>
+            <td onclick="makeMove(1, 1)"></td>
+            <td onclick="makeMove(1, 2)"></td>
+        </tr>
+        <tr>
+            <td onclick="makeMove(2, 0)"></td>
+            <td onclick="makeMove(2, 1)"></td>
+            <td onclick="makeMove(2, 2)"></td>
+        </tr>
+    </table>
+    <div id="message"></div>
+<button onclick="viewResults()" class="btn btn-dark">View Results</button>
+    <button class="btn btn-primary" onclick="startNewGame()">New Game</button>
+        <button class="btn btn-danger mt-3" onclick="cleanResults()">Clean Results</button> <!-- New button -->
+
+<div id="message" class="text-center mt-3"></div>
+<!-- <div class="text-center mt-3">
+    <button class="btn btn-primary" onclick="startNewGame()">New Game</button>
+</div> -->
+ <h2 class="text-center fade-in">Game Results</h2>
+<div class="col-xs-6">
+    <table id="results" class="results-table table table-dark table-bordered">
+        <thead>
+            <tr>
+                <th>Winner</th>
+                <th>Result</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    </div>
+      <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    
+    <script>
+        function makeMove(row, col) {
+            fetch(`/api/tictactoe/move?row=${row}&col=${col}`, {
+                method: 'POST'
+            })
+            .then(response => response.text())
+            .then(message => {
+                document.getElementById('message').innerText = message;
+                updateBoard();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+        function cleanResults() {
+            fetch('/api/tictactoe/cleanResults', {
+                method: 'POST'
+            })
+            .then(response => response.text())
+            .then(message => {
+                alert(message); // Display response message
+            })
+            .catch(error => console.error('Error:', error));
+        }
+        function startNewGame() {
+            fetch('/api/tictactoe/initialize', {
+                method: 'POST'
+            })
+            .then(response => response.text())
+            .then(message => {
+                document.getElementById('message').innerText = message;
+                updateBoard();
+                loadResults();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+        function viewResults() {
+            fetch('/api/tictactoe/results')
+            .then(response => response.json())
+            .then(results => {
+                const resultsTableBody = document.querySelector('#results tbody');
+                resultsTableBody.innerHTML = ''; // Clear previous results
+                results.forEach(result => {
+                    const row = document.createElement('tr');
+                    const winnerCell = document.createElement('td');
+                    const resultCell = document.createElement('td');
+                    winnerCell.innerText = result.winner;
+                    resultCell.innerText = result.result;
+                    row.appendChild(winnerCell);
+                    row.appendChild(resultCell);
+                    resultsTableBody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Error:', error));
+        }
+        function updateBoard() {
+            fetch('/api/tictactoe/board')
+            .then(response => response.text())
+            .then(board => {
+                const cells = document.querySelectorAll('#board td');
+                const boardArray = board.trim().split('\n');
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        cells[i * 3 + j].innerText = boardArray[i][j * 2];
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // Call the updateBoard function initially to load the current board state
+        updateBoard();
+    </script>
+</body>
+</html>
