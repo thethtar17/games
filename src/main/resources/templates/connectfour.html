@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Four</title>
+            <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        body{
+        
+        margin:10px;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(7, 50px);
+            gap: 5px;
+            margin: 10px auto;
+            border: 2px solid black;
+            width:390px;
+            margin-left:2px;
+            
+             background-color:#4d4dff;
+            
+        }
+        .cell {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid black;
+            font-size: 24px;
+            border-radius: 50%;
+            overflow: hidden;
+            background-color:white;
+        }
+        .player-1 {
+            background-color: red;
+        }
+        .player-2 {
+            background-color: blue;
+        }
+        .btn {
+       		 
+            font-weight: 700;
+        }
+       .bodye{
+       margin-left:250px;
+       padding:10px;
+       }
+    </style>
+  
+</head>
+<body>
+    <h1 class="text-center">Connect Four</h1>
+    <div class="bodye">
+         <div>
+            <button onclick="dropPiece(0)" class="btn btn-sm" id="dropButton0">Drop</button>
+            <button onclick="dropPiece(1)" class="btn btn-sm" id="dropButton1">Drop</button>
+            <button onclick="dropPiece(2)" class="btn btn-sm" id="dropButton2">Drop</button>
+            <button onclick="dropPiece(3)" class="btn btn-sm" id="dropButton3">Drop</button>
+            <button onclick="dropPiece(4)" class="btn btn-sm" id="dropButton4">Drop</button>
+            <button onclick="dropPiece(5)" class="btn btn-sm" id="dropButton5">Drop</button>
+            <button onclick="dropPiece(6)" class="btn btn-sm" id="dropButton6">Drop</button>
+        </div>
+    <div class="board" id="board"></div>
+</div>
+    <div class="text-center mt-3">
+            <button onclick="restartGame()" class="btn btn-secondary">Restart Game</button>
+        </div>
+        <div id="message" class="text-center mt-4"></div>
+       <script>
+        const apiUrl = 'http://localhost:8090/game';
+        let gameEnded = false;
+
+        async function getBoard() {
+            const response = await fetch(`${apiUrl}/board`);
+            const board = await response.json();
+            renderBoard(board);
+        }
+
+        async function dropPiece(col) {
+            if (gameEnded) return;
+            const response = await fetch(`${apiUrl}/drop/${col}`, {
+                method: 'POST'
+            });
+            const message = await response.text();
+            document.getElementById('message').innerText = message;
+            await getBoard();
+            checkGameOver();
+        }
+        async function restartGame() {
+            const response = await fetch(`${apiUrl}/restart-game`, {
+                method: 'POST'
+            });
+            document.getElementById('message').innerText = '';
+            gameEnded = false;
+            await getBoard();
+            button.disabled = true;
+        }
+        function checkGameOver() {
+            const message = document.getElementById('message').innerText;
+            if (message.includes('wins')) {
+                gameEnded = true;
+                disableDropButtons();
+            }
+        }
+
+        function disableDropButtons() {
+            for (let i = 0; i < 7; i++) {
+                const button = document.getElementById(`dropButton${i}`);
+                button.disabled = true;
+            }
+        }
+
+        function enableDropButtons() {
+            for (let i = 0; i < 7; i++) {
+                const button = document.getElementById(`dropButton${i}`);
+                button.disabled = false;
+            }
+        }
+
+      
+
+        function renderBoard(board) {
+            const boardDiv = document.getElementById('board');
+            boardDiv.innerHTML = '';
+            board.forEach(row => {
+                row.forEach(cell => {
+                    const cellDiv = document.createElement('div');
+                    cellDiv.classList.add('cell');
+                    if (cell === 1) {
+                        cellDiv.classList.add('player-1');
+                    } else if (cell === 2) {
+                        cellDiv.classList.add('player-2');
+                    }
+                    boardDiv.appendChild(cellDiv);
+                });
+            });
+        }
+
+        getBoard();
+    </script>
+</body>
+</html>
